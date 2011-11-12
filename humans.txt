@@ -1,0 +1,35 @@
+# Hello Humans
+
+	http://humanstxt.org
+
+# Project
+
+	Jolt for PHP
+	http://nateferrero.com/jolt
+
+# Description
+
+	Jolt makes your PHP files come alive with a simple template
+	system where PHP variables are embeddable in the output of your PHP files.
+
+# Authors
+
+	Nate Ferrero
+	nateferrero@gmail.com
+	http://nateferrero.com
+	http://github.com/NateFerrero
+
+# Technologies
+
+	Language: PHP 5.3+
+	Software: TextMate, Git
+	
+# Thanks to
+
+	Karla <3 for making every day more wonderful
+	
+	GitHub, TextMate, PHP development teams
+	
+	MomentumOS, Inc for the opportunity to work with a super badass dev and product team
+	
+	David Boskovic for turning me into a much better coder
