@@ -8,6 +8,7 @@ namespace jolt;
 use Exception;
 use ErrorException;
 use stdClass as Object;
+use newline;
 use lessc;
 
 /**
@@ -69,22 +70,6 @@ function err($n, $s, $f, $l) {
 }
 
 set_error_handler('jolt\\err');
-
-/**
- * Simple lanugage helpers
- */
-function english_article($word) {
-	switch(strtolower(substr($word, 0, 1))) {
-		case 'a': case 'e': case 'i': case 'o': case 'u':
-			return 'an';
-		case 'h':
-			switch(strtolower($word)) {
-				case 'hour':
-					return 'an';
-			}
-	}
-	return 'a';
-}
 
 /**
  * Render a jolt page
@@ -340,6 +325,19 @@ define('jolt\\root', $base);
  * Change working dir
  */
 chdir(root);
+
+/**
+ * Humans.txt handling
+ */
+if($url === '/humans.txt') {
+	header('Content-Type: text/plain');
+	if(file_exists('humans.txt')) {
+		readfile('humans.txt');
+		echo newline.newline;
+	}
+	readfile(dir.'/humans.txt');
+	exit;
+}
 
 /**
  * Look for url.* if url doesn't contain a .

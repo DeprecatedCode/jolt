@@ -4,6 +4,22 @@ namespace jolt;
 use Exception;
 
 /**
+ * Simple langugage helper
+ */
+function english_article($word) {
+	switch(strtolower(substr($word, 0, 1))) {
+		case 'a': case 'e': case 'i': case 'o': case 'u':
+			return 'an';
+		case 'h':
+			switch(strtolower($word)) {
+				case 'hour':
+					return 'an';
+			}
+	}
+	return 'a';
+}
+
+/**
  * Jolt Exception
  */
 $type = get_class($exception);
