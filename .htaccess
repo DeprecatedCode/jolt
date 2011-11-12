@@ -7,11 +7,11 @@ php_flag    short_open_tag          1
 
 # PHP values
 php_value   error_reporting     6135
-php_value	memory_limit        256M
+php_value   memory_limit        256M
 SetEnv TZ   UTC
 
 # URL rewriting directives
 <IfModule mod_rewrite.c>
-	RewriteEngine On
-	RewriteRule .* jolt.php [L]
+    RewriteEngine On
+    RewriteRule .* jolt.php [L]
 </IfModule>
