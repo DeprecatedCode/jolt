@@ -1,6 +1,7 @@
 <?php
 
 namespace jolt;
+use Exception;
 
 /**
  * Jolt Exception

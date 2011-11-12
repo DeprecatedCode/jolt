@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * Newline constant
+ */
+const newline = "\n";
+
+/**
+ * Load a resource
+ */
 function jolt() {
 	static $__resources = array();
 	

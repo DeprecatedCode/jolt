@@ -8,18 +8,23 @@ namespace jolt;
 use Exception;
 use ErrorException;
 use stdClass as Object;
+use lessc;
 
 /**
- * Save script name
+ * Save script name and dir
  */
 define('jolt\\script', __FILE__);
+define('jolt\\dir', __DIR__);
 
 /**
  * Load feature
  */
-function feature($feature, $params = array()) {
+function feature($__feature, $params = array()) {
+	$__feature = __DIR__ . "/features/$__feature.php";
 	extract($params);
-	require_once(__DIR__ . "/features/$feature.php");
+	if(!is_file($__feature))
+		throw new Exception("Invalid feature file `$__feature`");
+	require_once($__feature);
 }
 
 /**
@@ -284,151 +289,156 @@ if(!isset($_SERVER['REDIRECT_URL']))
 	throw new Exception('You need to enable `mod_rewrite` in Apache and ensure you are using PHP 5.3 or later');
 
 /**
- * Load jolt domains configuration
+ * Route the request
+ */
+$url = $_SERVER['REDIRECT_URL'];
+if(substr($url, -1) === '/')
+	$url .= 'index';
+	
+/**
+ * Define the url constant
+ */
+define('jolt\\url', $url);
+
+/**
+ * Load jolt domains configuration and setup if no domain file
  */
 $file = __DIR__ . '/domains.php';
-if(is_file($file) && filesize($file) > 0) {
-	
-	/**
-	 * Load matching domains
-	 */	
-	require_once($file);
-	
-	/**
-	 * Look for host in domains list
-	 */
-	$host = $_SERVER['HTTP_HOST'];
-	
-	if(!isset(system::$domains[$host]))
-		throw new Exception("Host `$host` not defined in file `$file`");
-	
-	/**
-	 * Use the directory
-	 */
-	$base = realpath(system::$domains[$_SERVER['HTTP_HOST']]);
-	
-	/**
-	 * Check valid base dir
-	 */
-	if(!is_dir($base))
-		throw new Exception("Directory `$base` for host `$host` does not exist");
-	
-	/**
-	 * Define root
-	 */
-	define('jolt\\root', $base);
-	
-	/**
-	 * Change working dir
-	 */
-	chdir(root);
-	
-	/**
-	 * Route the request
-	 */
-	$url = $_SERVER['REDIRECT_URL'];
-	if(substr($url, -1) === '/')
-		$url .= 'index';
-		
-	/**
-	 * Define the url constant
-	 */
-	define('jolt\\url', $url);
-	
-	/**
-	 * Look for url.* if url doesn't contain a .
-	 */
-	$search = $base . $url . (strpos($url, '.') !== false ? '' : '.*');
-	$matches = glob($search);
-	if(count($matches) === 0) {
-		/**
-		 * Check for a global not-found page
-		 * TODO add realm not-found, like forum/not-found.php
-		 */
-		$matches = glob($base . '/not-found.*');
-		if(count($matches) === 0)
-			throw new Exception("No resource found for `$url`");
-	}
-	
-	/**
-	 * Loop through all matched extensions
-	 */
-	$exts = array();
-	foreach($matches as $match) {
-		$exts[strtolower(pathinfo($match, PATHINFO_EXTENSION))] = $match;
-	}
-	
-	/**
-	 * Handle PHP Files
-	 */
-	if(isset($exts['php'])) {
-		try {
-			echo render($exts['php']);
-		} catch(Exception $e) {
-			throw new Exception("There was a problem rendering `".$exts['php']."`", 0, $e);
-		}
-	}
-	
-	/**
-	 * Handle HTML Files
-	 */
-	else if(isset($exts['html'])) {
-		try {
-			echo render($exts['html']);
-		} catch(Exception $e) {
-			throw new Exception("There was a problem rendering `".$exts['html']."`", 0, $e);
-		}
-	}
-	
-	/**
-	 * Handle plain text Files
-	 */
-	else if(isset($exts['txt'])) {
-		header('Content-Type: text/plain');
-		header('Content-Length: ' . filesize($exts['txt']));
-		readfile($exts['txt']);
-	}
-	
-	/**
-	 * No valid type found
-	 */
-	else {
-		$debug = implode(', ', $exts);
-		throw new Exception("Jolt cannot render the path `$url` because no file of valid type exists, found `$debug`");
-	}
-	
-	/**
-	 * Exit PHP
-	 */
-	exit;
-}
-
-$setup = <<<_
-<?php
+if(!is_file($file) || filesize($file) === 0)
+	feature('setup');
 
 /**
- * Jolt Domains
- */
-
-namespace jolt;
-
-/**
- * Jolt system
- */
-system::\$domains['jolt.dev'] = './';
+ * Load matching domains
+ */	
+require_once($file);
 
 /**
- * Add your custom domains here
+ * Look for host in domains list
  */
-system::\$domains['test.dev'] = '../test';
-_;
-try {
-	file_put_contents($file, $setup);
-} catch(Exception $e) {
-	throw new Exception("Could not write `$file` &mdash; Run this: `sudo touch $file; sudo chmod 777 $file`");
+$host = $_SERVER['HTTP_HOST'];
+
+if(!isset(system::$domains[$host]))
+	throw new Exception("Host `$host` not defined in file `$file`");
+
+/**
+ * Use the directory
+ */
+$base = realpath(system::$domains[$_SERVER['HTTP_HOST']]);
+
+/**
+ * Check valid base dir
+ */
+if(!is_dir($base))
+	throw new Exception("Directory `$base` for host `$host` does not exist");
+
+/**
+ * Define root
+ */
+define('jolt\\root', $base);
+
+/**
+ * Change working dir
+ */
+chdir(root);
+
+/**
+ * Look for url.* if url doesn't contain a .
+ */
+$search = $base . $url . (strpos($url, '.') !== false ? '' : '.*');
+$matches = glob($search);
+if(count($matches) === 0) {
+	/**
+	 * Check for a global not-found page
+	 * TODO add realm not-found, like forum/not-found.php
+	 */
+	$matches = glob($base . '/not-found.*');
+	if(count($matches) === 0)
+		throw new Exception("No resource found for `$url`");
 }
 
 /**
- * If everything is set, just redirect to the root URL
+ * Loop through all matched extensions
  */
-redirect(dirname($_SERVER['REQUEST_URI']));
+$exts = array();
+foreach($matches as $match) {
+	$exts[strtolower(pathinfo($match, PATHINFO_EXTENSION))] = $match;
+}
+
+/**
+ * Handle PHP Files
+ */
+if(isset($exts['php'])) {
+	try {
+		echo render($exts['php']);
+	} catch(Exception $e) {
+		throw new Exception("There was a problem rendering `".$exts['php']."`", 0, $e);
+	}
+}
+
+/**
+ * Handle HTML Files
+ */
+else if(isset($exts['html'])) {
+	try {
+		echo render($exts['html']);
+	} catch(Exception $e) {
+		throw new Exception("There was a problem rendering `".$exts['html']."`", 0, $e);
+	}
+}
+
+/**
+ * No valid type found
+ */
+else {
+	
+	/**
+	 * Get the first file
+	 */
+	foreach($exts as $ext => $file) break;
+	
+	/**
+	 * Available mime types
+	 */
+	$mimes = array(
+		'txt' => 'text/plain',
+		'css' => 'text/css',
+		'less' => 'text/css',
+		'jpg' => 'image/jpeg',
+		'png' => 'image/png',
+		'gif' => 'image/gif',
+		'js' => 'application/javascript',
+		'json' => 'text/plain'
+	);
+	
+	$ext = strtolower(pathinfo($file, PATHINFO_EXTENSION));
+	
+	$mime = isset($mimes[$ext]) ? $mimes[$ext] : 'application/octet-stream';
+	
+	/**
+	 * Check for special cases
+	 */
+	switch($ext) {
+		case 'less':
+			feature('lessc.inc');
+			feature('cache');
+			
+			$lfile = $file;
+			$file = cache::$dir . '/less-' . md5($lfile) . '.css';
+			
+			try {
+			    lessc::ccompile($lfile, $file);
+			} catch (exception $ex) {
+			    echo '/* Error compiling less file: '.$ex->getMessage().' */';
+				exit;
+			}
+			
+			break;
+	}
+	
+	/**
+	 * Stream file
+	 */
+	header('Content-Type: ' . $mime);
+	header('Content-Length: ' . filesize($file));
+	readfile($file);
+}
