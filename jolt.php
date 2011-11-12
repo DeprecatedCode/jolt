@@ -6,6 +6,26 @@
  */
 namespace jolt;
 use Exception;
+use ErrorException;
+use stdClass as Object;
+
+/**
+ * Save script name
+ */
+define('jolt\\script', __FILE__);
+
+/**
+ * Load feature
+ */
+function feature($feature, $params = array()) {
+	extract($params);
+	require_once(__DIR__ . "/features/$feature.php");
+}
+
+/**
+ * Includes
+ */
+require_once('global.php');
 
 /**
  * Redirect
@@ -19,71 +39,8 @@ function redirect($url) {
  * Exception handler
  */
 function ex($e) {
-	
-	$type = get_class($e);
-	$body = $e->getMessage();
-	$body = "<p>$body</p>";
-	$a = ucfirst(english_article($type));
-	$main = "$a $type has occurred";
-	$_line = $e->getLine();
-	$_file = $e->getFile();
-	
-	if(strtolower($_file) === strtolower(__FILE__))
-		$location = '';
-	else
-		$location = "<h3><span class='label'>File</span> `$_file` <span class='label'>Line</span> $_line</h3>";
-	
-	if(defined('jolt\\root')) {
-		$root = root;
-		$hostinfo = "<h3><span class='label'>Host</span> `$_SERVER[HTTP_HOST]`</h3><h3><span class='label'>Document Root</span> `$root`</h3>";
-	}
-	else
-		$hostinfo = "<h3>No matching host</h3>";
-	
-	while($e = $e->getPrevious()) {
-		if(is_null($e))
-			break;
-		$type = get_class($e);
-		$a = english_article($type);
-		$sub = "Which started out as $a $type";
-		$line = $e->getLine();
-		$file = $e->getFile();
-		$location = "<h3><span class='label'>File</span> `$file` <span class='label'>Line</span> $line</h3>";
-		$body .= '<div class="prev">'."<h2>$sub</h2><p>$location" . $e->getMessage() . '</p></div>';
-	}
-	$body = preg_replace('/\\s\\[\\<a.*>]/', '', $hostinfo.$location.$body);
-	$body = preg_replace('/`(.*?)`/', '<code>$1</code>', $body);
-	
-	echo <<<_
-<!doctype html>
-<html>
-	<head>
-		<title>Jolt &bull; $type</title>
-		<style>
-			body {
-				cursor: default; font: 14px sans-serif; background: #100; 
-				color: #fff; padding: 30px;
-			}
-			a {color: #f88;}
-			h1 {font-size: 22px; margin-top: 0;}
-			h2 {font-size: 18px; margin-top: 0; color: #c00;}
-			h3 {font-size: 14px; margin-top: 0; color: #dc0; font-weight: normal;}
-			.prev {margin: 18px 0; background: #200; padding: 30px;}
-			.label {
-				border-radius: 4px; background: #dc0; color: #100; font-size: 80%;
-				font-weight: bold; margin-right: 4px; padding: 3px 7px 2px;
-				box-shadow: inset 0 10px 20px -10px #fec, inset 0 -10px 20px -10px #ca0;
-			}
-			p, h2 {margin-top: 24px;}
-		</style>
-	</head>
-	<body>
-		<h1>Jolt &bull; System Notice</h1>
-		<h2>$main</h2>
-		$body
-	</body>
-</html>
-_;
+	define('jolt\\in_ex', true);
+	feature('exception', array('exception' => $e));
 }
 
 set_exception_handler('jolt\\ex');
@@ -92,7 +49,18 @@ set_exception_handler('jolt\\ex');
  * Error handler
  */
 function err($n, $s, $f, $l) {
-	throw new \ErrorException($s, 0, $n, $f, $l);
+	if(!defined('jolt\\in_ex'))
+		throw new ErrorException($s, 0, $n, $f, $l);
+	
+	/**
+	 * We are already displaying an exception
+	 */
+	echo "<style>body {font-family: sans-serif;}</style>
+		<h1>Jolt</h1><h2>Error during exception display</h2>
+		<p><strong>Error:</strong> $s</p>
+		<p><strong>File:</strong> $f</p>
+		<p><strong>Line:</strong> $l</p>";
+	exit;
 }
 
 set_error_handler('jolt\\err');
@@ -116,139 +84,169 @@ function english_article($word) {
 /**
  * Render a jolt page
  */
-function render($__file) {
-	$template = 'default';
+function render($file) {
+	
+	/**
+	 * Specify system defaults
+	 */
+	$jolt = new Object;
+	$jolt->template = 'html';
+	$jolt->template_group = 'default';
+	$jolt->url = url;
+	$jolt->root = root;
+	$jolt->file = $file;
+	unset($file);
+	
+	/**
+	 * Load user defaults
+	 */
 	if(is_file('--defaults.php'))
 		require('--defaults.php');
-	$__stack = array($__file);
-	while(count($__stack) > 0) {
-		$__file = array_shift($__stack);
+	
+	$jolt->stack = array($jolt->file);
+	while(count($jolt->stack) > 0) {
+		$jolt->file = array_shift($jolt->stack);
+		if(!is_file($jolt->file))
+			throw new Exception("Required template `$jolt->file` not found while rendering `$jolt->url`");
+			
+		/**
+		 * Capture template output
+		 */
 		ob_start();
-		require $__file;
-		$__buffer = ob_get_clean();
-		foreach(array_keys(get_defined_vars()) as $__variable) {
-			$__variable = strtolower($__variable);
-			if(strpos($__buffer, '{'.$__variable) === false)
+		require $jolt->file;
+		$jolt->buffer = ob_get_clean();
+		
+		/**
+		 * Loop through defined vars
+		 */
+		foreach(array_keys(get_defined_vars()) as $_____variable_____) {
+			$_____variable_____ = strtolower($_____variable_____);
+			if(strpos($jolt->buffer, '{'.$_____variable_____) === false)
 				continue;
-			$__regex = "/\{$__variable([a-z0-9_.,\\s$-]*)\}/";
-			preg_match_all($__regex, $__buffer, $__matches);
-			foreach(array_unique($__matches[1]) as $__map) {
+			$jolt->regex = "/\{$_____variable_____([a-z0-9_.,\\s$-]*)\}/";
+			preg_match_all($jolt->regex, $jolt->buffer, $jolt->matches);
+			foreach(array_unique($jolt->matches[1]) as $jolt->map) {
 				/**
 				 * Reset for each use
 				 */
-				$__insert = null;
+				$jolt->insert = null;
 			
 				/**
 				 * Use the variable
 				 */
-				$__value = $$__variable;
-				if($__map === '')
-					$__insert =& $__value;
+				$jolt->value = $$_____variable_____;
+				if($jolt->map === '')
+					$jolt->insert =& $jolt->value;
 				
 				/**
 				 * Dive into the variable
 				 */
-				else if(substr($__map, 0, 1) === '.') {
-					$__insert = &$__value;
+				else if(substr($jolt->map, 0, 1) === '.') {
+					$jolt->insert = &$jolt->value;
 					/**
 					 * Null values will not be inserted
 					 */
-					if(is_null($__insert))
+					if(is_null($jolt->insert))
 						break;
 				
 					/**
 					 * Get segments of accessor map
 					 */
-					$__segments = explode('.', $__map);
-					array_shift($__segments);
-					foreach($__segments as $__segment) {
+					$jolt->segments = explode('.', $jolt->map);
+					array_shift($jolt->segments);
+					foreach($jolt->segments as $jolt->segment) {
 					
 						/**
 						 * Handle dynamic segments
 						 */
-						if(substr($__segment, 0, 1) === '$') {
-							$__segment = substr($__segment, 1);
-							$__segment = $$__segment;
+						if(substr($jolt->segment, 0, 1) === '$') {
+							$jolt->segment = substr($jolt->segment, 1);
+							$jolt->segment = $$jolt->segment;
 						}
 					
 						/**
 						 * Handle String access
 						 */
-						if(is_string($__insert)) {
-							$__subs = explode(',', $__segment);
-							$__temp = '';
-							foreach($__subs as $__sub) {
-								$__sub = explode('-', $__sub);
-								if(count($__sub) == 1)
-									$__sub[] = $__sub[0];
-								$__temp .= substr($__insert, $__sub[0], $__sub[1] - $__sub[0] + 1);
+						if(is_string($jolt->insert)) {
+							$jolt->subs = explode(',', $jolt->segment);
+							$jolt->temp = '';
+							foreach($jolt->subs as $jolt->sub) {
+								$jolt->sub = explode('-', $jolt->sub);
+								if(count($jolt->sub) == 1)
+									$jolt->sub[] = $jolt->sub[0];
+								$jolt->temp .= substr($jolt->insert, $jolt->sub[0], $jolt->sub[1] - $jolt->sub[0] + 1);
 							}
-							$__insert = $__temp;
+							$jolt->insert = $jolt->temp;
 						}
 					
 						/**
 						 * Handle Array access
 						 */
-						else if(is_array($__insert)) {
-							if(isset($__insert[$__segment]))
-								$__insert = $__insert[$__segment];
+						else if(is_array($jolt->insert)) {
+							if(isset($jolt->insert[$jolt->segment]))
+								$jolt->insert = $jolt->insert[$jolt->segment];
 							else
-								$__insert = null;
+								$jolt->insert = null;
 						}
 					
 						/**
 						 * Handle Object access
 						 */
-						else if(is_object($__insert)) {
-							if(isset($__insert->$__segment))
-								$__insert = $__insert->$__segment;
+						else if(is_object($jolt->insert)) {
+							if(isset($jolt->insert->{$jolt->segment}))
+								$jolt->insert = $jolt->insert->{$jolt->segment};
 							else
-								$__insert = null;
+								$jolt->insert = null;
 						}
 					}
 				}
 				
 				/**
-				 * Null values will not be inserted
+				 * Null values are blank
 				 */
-				if(is_null($__insert))
-					continue;
+				if(is_null($jolt->insert))
+					$jolt->insert = '';
 				
 				/**
 				 * Convert objects and arrays to string
 				 */
-				if(!is_string($__insert)) {
-					render_var($__insert);
+				if(!is_string($jolt->insert)) {
+					render_var($jolt->insert);
 				}
 			
 				/**
 				 * Replace all instances of this accessor
 				 */
-				$__replace = '{'.$__variable.$__map.'}';
-				$__buffer = str_replace($__replace, $__insert, $__buffer);
+				$jolt->replace = '{'.$_____variable_____.$jolt->map.'}';
+				$jolt->buffer = str_replace($jolt->replace, $jolt->insert, $jolt->buffer);
 			}
 		}
 		
 		/**
+		 * Clear the only newly-created variable
+		 */
+		unset($_____variable_____);
+		
+		/**
 		 * Set the current buffer contents as the contents of the parent template and continue
 		 */
-		$__content = $__buffer;
-		unset($__buffer);
+		$jolt->content = $jolt->buffer;
+		unset($jolt->buffer);
 		
 		/**
 		 * Cascade up the template chain if one is set, remember all sub modules are already rendered at this point
 		 * Templates can include additional modules easily by specifying the module in the PHP code
 		 */
-		if(isset($template)) {
-			if(!isset($template_group))
-				throw new Exception("Template set to `$template`, but `template_group` not defined");
-			$__stack[] = __DIR__ . "/--templates/$template_group/$template.php";
-			unset($template);
+		if(isset($jolt->template)) {
+			if(!isset($jolt->template_group))
+				throw new Exception("Template set to `$jolt->template`, but `\$jolt->template_group` not defined");
+			$jolt->stack[] = root . "/--templates/$jolt->template_group/$jolt->template.php";
+			unset($jolt->template);
 		}
 
 	}
 		
-	return $__content;
+	return $jolt->content;
 }
 
 function render_var(&$var) {
@@ -286,7 +284,7 @@ if(!isset($_SERVER['REDIRECT_URL']))
 	throw new Exception('You need to enable `mod_rewrite` in Apache and ensure you are using PHP 5.3 or later');
 
 /**
- * Using the jolt system
+ * Load jolt domains configuration
  */
 $file = __DIR__ . '/domains.php';
 if(is_file($file) && filesize($file) > 0) {
@@ -310,24 +308,44 @@ if(is_file($file) && filesize($file) > 0) {
 	$base = realpath(system::$domains[$_SERVER['HTTP_HOST']]);
 	
 	/**
-	 * Define root
-	 */
-	define('jolt\\root', $base);
-	
-	/**
 	 * Check valid base dir
 	 */
 	if(!is_dir($base))
 		throw new Exception("Directory `$base` for host `$host` does not exist");
 	
+	/**
+	 * Define root
+	 */
+	define('jolt\\root', $base);
+	
+	/**
+	 * Change working dir
+	 */
+	chdir(root);
+	
+	/**
+	 * Route the request
+	 */
 	$url = $_SERVER['REDIRECT_URL'];
-	if(strpos($url, $base) === 0)
-		$url = substr($url, strlen($base));
 	if(substr($url, -1) === '/')
 		$url .= 'index';
-	$matches = glob(__DIR__ . $url . '.*');
+		
+	/**
+	 * Define the url constant
+	 */
+	define('jolt\\url', $url);
+	
+	/**
+	 * Look for url.* if url doesn't contain a .
+	 */
+	$search = $base . $url . (strpos($url, '.') !== false ? '' : '.*');
+	$matches = glob($search);
 	if(count($matches) === 0) {
-		$matches = glob(__DIR__ . 'not-found.*');
+		/**
+		 * Check for a global not-found page
+		 * TODO add realm not-found, like forum/not-found.php
+		 */
+		$matches = glob($base . '/not-found.*');
 		if(count($matches) === 0)
 			throw new Exception("No resource found for `$url`");
 	}
@@ -341,18 +359,46 @@ if(is_file($file) && filesize($file) > 0) {
 	}
 	
 	/**
-	 * Handle matched resources
+	 * Handle PHP Files
 	 */
 	if(isset($exts['php'])) {
 		try {
 			echo render($exts['php']);
 		} catch(Exception $e) {
-			throw new Exception("There's a problem with `".$exts['php']."`", 0, $e);
+			throw new Exception("There was a problem rendering `".$exts['php']."`", 0, $e);
 		}
 	}
-
+	
 	/**
-	 * Stop PHP processing
+	 * Handle HTML Files
+	 */
+	else if(isset($exts['html'])) {
+		try {
+			echo render($exts['html']);
+		} catch(Exception $e) {
+			throw new Exception("There was a problem rendering `".$exts['html']."`", 0, $e);
+		}
+	}
+	
+	/**
+	 * Handle plain text Files
+	 */
+	else if(isset($exts['txt'])) {
+		header('Content-Type: text/plain');
+		header('Content-Length: ' . filesize($exts['txt']));
+		readfile($exts['txt']);
+	}
+	
+	/**
+	 * No valid type found
+	 */
+	else {
+		$debug = implode(', ', $exts);
+		throw new Exception("Jolt cannot render the path `$url` because no file of valid type exists, found `$debug`");
+	}
+	
+	/**
+	 * Exit PHP
 	 */
 	exit;
 }
