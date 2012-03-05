@@ -436,8 +436,6 @@ class Jolt extends Node {
 			));
 		} else {
 			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;");
-			if(!$this->_)
-			dump($this);
 			return parent::build(false);
 		}
 	}
