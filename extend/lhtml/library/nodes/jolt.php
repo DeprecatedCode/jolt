@@ -33,7 +33,7 @@ class Jolt extends Node {
 	 * Save a section stack for later use
 	 * @author Nate Ferrero
 	 */
-	public static function setSection($section, $file, $stack) {
+	public static function setSection($section, $file, &$stack) {
 		/**
 		 * Initialize array
 		 */
@@ -256,6 +256,7 @@ class Jolt extends Node {
 
 				/**
 				 * Add all remaining items to the catchall
+				 * @author Nate Ferrero
 				 */
 				$tags = $applyNow->getElementsByTagName('jolt:catchall');
 				foreach ($tags as $tag) {
@@ -285,6 +286,7 @@ class Jolt extends Node {
 
 		/**
 		 * Check if this is an outclude or include
+		 * @author Nate Ferrero
 		 */
 		if(isset($this->attributes['parent'])) {
 
@@ -292,13 +294,19 @@ class Jolt extends Node {
 
 			/**
 			 * Output the jolt tag as a div
+			 * @author Nate Ferrero
 			 */
 			$this->element = 'div';
 			$this->finalized = true;
 			unset($this->attributes['section']);
 			unset($this->attributes['parent']);
 			$this->attributes['class'] = 'jolt-content jolt-content-' . $this->slug;
-			$this->_ = null;
+
+			/**
+			 * This will let us know if the current section has already been loaded;
+			 * if it has, that means that $outclude will be set to false (i.e. it's being included)
+			 * @author Nate Ferrero
+			 */
 			$outclude = self::setSection($this->section, $jdata->__file__, $this);
 
 			/**
@@ -307,6 +315,13 @@ class Jolt extends Node {
 			 */
 			if(!$outclude)
 				return;
+
+			/**
+			 * We are outcluding, so we need to wait for the parent to re-include this
+			 * at the proper location in the stack; for now $this->_ will be null
+			 * @author Nate Ferrero
+			 */
+			$this->_ = null;
 			
 			e\trace("Jolt", "Loading parent `$parent`");
 
@@ -420,6 +435,9 @@ class Jolt extends Node {
 				'html' => parent::build(false)
 			));
 		} else {
+			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;");
+			if(!$this->_)
+			dump($this);
 			return parent::build(false);
 		}
 	}
