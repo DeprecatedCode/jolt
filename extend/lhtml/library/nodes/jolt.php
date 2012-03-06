@@ -18,8 +18,14 @@ class Jolt extends Node {
 	 * Handle Jolt sections
 	 * @author Nate Ferrero
 	 */
-	public static $sections = array();
-	public static $parents = array();
+	private static $sections = array();
+	private static $parents = array();
+
+	/**
+	 * Placeholder content
+	 * @author Nate Ferrero
+	 */
+	private static $placeholderContent = array();
 
 	/**
 	 * Special variables
@@ -33,7 +39,7 @@ class Jolt extends Node {
 	 * Save a section stack for later use
 	 * @author Nate Ferrero
 	 */
-	public static function setSection($section, $file, &$stack) {
+	private static function setSection($section, $file, &$stack) {
 		/**
 		 * Initialize array
 		 */
@@ -58,7 +64,7 @@ class Jolt extends Node {
 	 * Load a section stack
 	 * @author Nate Ferrero
 	 */
-	public static function getSection($section, $default) {
+	private static function getSection($section, $default) {
 		if(isset(self::$sections[$section])) {
 			/**
 			 * If a non-default area has been defined, return it first
@@ -100,6 +106,39 @@ class Jolt extends Node {
 		 */
 		if(isset($this->attributes['section'])) {
 			return $this->doSection($dir);
+		}
+
+		/**
+		 * Check if this is jolt placeholder logic
+		 * @author Nate Ferrero
+		 */
+		if(isset($this->attributes['placeholder'])) {
+			$this->element = false;
+			
+			/**
+			 * Check if placeholder content exists
+			 * @author Nate Ferrero
+			 */
+			$placeholder = $this->attributes['placeholder'];
+			if(isset(self::$placeholderContent[$placeholder])) {
+				$node = (self::$placeholderContent[$placeholder]);
+				$node->element = false;
+				$node->appendTo($this);
+			}
+
+			/**
+			 * Allow default content to be loaded by including
+			 * @author Nate Ferrero
+			 */
+			else if(isset($this->attributes['default'])) {
+				$include = $this->_nchild(':include', $this->_code);
+				$include->attributes['file'] = $this->attributes['default'];
+			}
+
+			/**
+			 * All done!
+			 */
+			return;
 		}
 
 		/**
@@ -163,31 +202,33 @@ class Jolt extends Node {
 		/**
 		 * Assemble template content areas
 		 */
-		foreach ($contents as $child) {
+		for($i = 0; $i < count($contents); $i++) {
+			/**
+			 * Get the current item
+			 */
+			$child = &$contents[$i];
 			if(!($child instanceof Node)) {
 				if(trim($child) !== '')
-					throw new Exception("Cannot place raw content directly inside a `<:jolt>` tag in `$jdata->__file__`");
+					throw new Exception("Cannot place raw content directly inside a `&lt;:jolt&gt;` tag,
+						only placeholder tags are allowed, such as `&lt;content&gt;` &mdash; in `$jdata->__file__`");
 				continue;
 			}
 
 			/**
-		 	 * Check for content tags
-		 	 */
-			$tags = $stack->getElementsByTagName($child->fake_element);
+			 * Allow transparent nodes
+			 */
+			if(isset($child->joltTransparent) && $child->joltTransparent) {
+				$all = $child->detachAllChildren();
+				foreach($all as $item)
+					$contents[] = $item;
+			}
 
 			/**
-		 	 * Move contents to new tags
-		 	 */
-			foreach ($tags as $tag) {
-
-				$tag->element = false;
-				$child->appendTo($tag);
-
-				/**
-				 * Only move to the first tag
-				 */
-				break;
-			}
+			 * Add child to placeholder content
+			 * @author Nate Ferrero
+			 */
+			e\trace("Jolt Placeholder", "", array('placeholder' => $child->fake_element, 'content' => $child));
+			self::$placeholderContent[$child->fake_element] = $child;
 		}
 
 		/**
