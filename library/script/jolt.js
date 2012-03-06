@@ -44,6 +44,12 @@
 		},
 		load: function(href) {
 			/**
+			 * Don't load if no href defined
+			 */
+			if(typeof href === 'undefined')
+				return false;
+			
+			/**
 			 * Continue if loading from another domain
 			 */
 			var uri = Jolt.uri(href);
@@ -56,8 +62,9 @@
 			return false;
 		},
 		link: function(e) {
-			if(Jolt.enabled)
-				return Jolt.load(e.target.href);
+			var el = $(e.currentTarget);
+			if(Jolt.enabled && el.attr('jolt') != 'disabled')
+				return Jolt.load(el.attr('href'));
 			else
 				return true;
 		},
