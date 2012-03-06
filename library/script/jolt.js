@@ -2,6 +2,10 @@
 	if(typeof window.$ == 'undefined' || typeof window.$.fn == 'undefined')
 		throw new Error("Jolt requires jQuery or Zepto");
 	window.Jolt = {
+		enabled: true,
+		disable: function() {
+			Jolt.enabled = false;
+		},
 		uri: function(href) {
 			var a = document.createElement('a');
 			a.href = href;
@@ -52,7 +56,10 @@
 			return false;
 		},
 		link: function(e) {
-			return Jolt.load(e.target.href);
+			if(Jolt.enabled)
+				return Jolt.load(e.target.href);
+			else
+				return true;
 		},
 		form: function(e) {
 			console.log(e);
