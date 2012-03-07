@@ -159,6 +159,15 @@ class Jolt extends Node {
 		 * @author Nate Ferrero
 		 */
 		$template = $this->attributes['template'];
+
+		/**
+		 * Template overrides
+		 * @author Nate Ferrero
+		 */
+		if($template == '@override') {
+			return null;
+		}
+
 		$template = "$dir/$template";
 		
 		if(pathinfo($template, PATHINFO_EXTENSION) !== 'jolt')
