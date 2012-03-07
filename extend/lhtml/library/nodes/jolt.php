@@ -164,9 +164,75 @@ class Jolt extends Node {
 		 * Template overrides
 		 * @author Nate Ferrero
 		 */
-		if($template == '@override') {
-			return null;
+		if($template == '@override')
+			return $this->doOverride();
+		else
+			return $this->doTemplate("$dir/$template");
+	}
+
+	/**
+	 * Override template placeholder logic
+	 * @author Nate Ferrero
+	 */
+	private function doOverride() {
+
+		/**
+		 * Get content areas and remove them from the jolt tag
+		 */
+		$contents = $this->detachAllChildren();
+
+		/**
+		 * Assemble template content areas
+		 */
+		for($i = 0; $i < count($contents); $i++) {
+			/**
+			 * Get the current item
+			 */
+			$child = $contents[$i];
+			if(!($child instanceof Node)) {
+				if(trim($child) !== '')
+					throw new Exception("Cannot place raw content directly inside a `&lt;:jolt&gt;` tag,
+						only placeholder tags are allowed, such as `&lt;content&gt;` &mdash; in `$jdata->__file__`");
+				continue;
+			}
+
+			/**
+			 * Allow transparent nodes
+			 */
+			if(isset($child->joltTransparent) && $child->joltTransparent) {
+				$all = $child->detachAllChildren();
+				foreach($all as $item)
+					$contents[] = $item;
+				continue;
+			}
+
+			/**
+			 * Check for originalContent etc.
+			 */
+			$slug = $child->fake_element;
+			$applyTo = $child->getElementsByTagName('original' . ucfirst($slug));
+			foreach ($applyTo as $applyNow) {
+				$applyNow->element = false;
+				if(isset(self::$placeholderContent[$slug])) {
+					self::$placeholderContent[$slug]->element = false;
+					self::$placeholderContent[$slug]->appendTo($applyNow);
+				}
+				break;
+			}
+
+			/**
+			 * Save the new override
+			 */
+			e\trace("Jolt Placeholder Override", "", array('placeholder' => $slug, 'content' => $child));
+			self::$placeholderContent[$slug] = $child;
 		}
+	}
+
+	/**
+	 * Templating logic
+	 * @author Nate Ferrero
+	 */
+	private function doTemplate($template) {
 
 		$template = "$dir/$template";
 		
@@ -230,6 +296,7 @@ class Jolt extends Node {
 				$all = $child->detachAllChildren();
 				foreach($all as $item)
 					$contents[] = $item;
+				continue;
 			}
 
 			/**
