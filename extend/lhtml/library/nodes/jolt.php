@@ -213,7 +213,18 @@ class Jolt extends Node {
 			$applyTo = $child->getElementsByTagName('original' . ucfirst($slug));
 			foreach ($applyTo as $applyNow) {
 				$applyNow->element = false;
+				$final = false;
 				if(isset(self::$placeholderContent[$slug])) {
+
+					/**
+					 * If this is a final="true" tag, prevent overriding
+					 * @author Nate Ferrero
+					 */
+					if(isset(self::$placeholderContent[$slug]->attributes['final']) &&
+						self::$placeholderContent[$slug]->attributes['final'] === 'true') {
+						$final = true;
+						break;
+					}
 					self::$placeholderContent[$slug]->element = false;
 					self::$placeholderContent[$slug]->appendTo($applyNow);
 				}
@@ -223,8 +234,10 @@ class Jolt extends Node {
 			/**
 			 * Save the new override
 			 */
-			e\trace("Jolt Placeholder Override", "", array('placeholder' => $slug, 'content' => $child));
-			self::$placeholderContent[$slug] = $child;
+			if(!$final) {
+				e\trace("Jolt Placeholder Override", "", array('placeholder' => $slug, 'content' => $child));
+				self::$placeholderContent[$slug] = $child;
+			}
 		}
 	}
 
