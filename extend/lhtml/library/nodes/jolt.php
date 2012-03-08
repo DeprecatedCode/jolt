@@ -207,10 +207,10 @@ class Jolt extends Node {
 			}
 
 			/**
-			 * Check for originalContent etc.
+			 * Check for page:content etc.
 			 */
 			$slug = $child->fake_element;
-			$applyTo = $child->getElementsByTagName('original' . ucfirst($slug));
+			$applyTo = $child->getElementsByTagName("page:$slug");
 			foreach ($applyTo as $applyNow) {
 				$applyNow->element = false;
 				$final = false;
