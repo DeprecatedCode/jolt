@@ -447,6 +447,27 @@ class Jolt extends Node {
 				return;
 
 			/**
+			 * Check for loading through JSON
+			 */
+			if(isset($_POST['@jolt'])) {
+				$status = $_POST['@jolt'];
+
+				/**
+				 * Get the root section
+				 */
+				foreach($status as $jSection => $jSlug)
+					break;
+
+				/**
+				 * If this is the root section, render it instead of loading the parent
+				 */
+				if(!isset($jSection) || $jSection == $this->section) {
+					$this->json = true;
+					return;
+				}
+			}
+
+			/**
 			 * We are outcluding, so we need to wait for the parent to re-include this
 			 * at the proper location in the stack; for now $this->_ will be null
 			 * @author Nate Ferrero
@@ -464,29 +485,6 @@ class Jolt extends Node {
 
 			if($jdata->__file__ == $v)
 				throw new Exception("Cannot use a jolt section as it's own parent");
-
-			/**
-			 * Check for loading through JSON
-			 */
-			$json = false;
-			if(isset($_POST['@jolt'])) {
-				$status = $_POST['@jolt'];
-
-				/**
-				 * Get the root section
-				 */
-				foreach($status as $jSection => $jSlug)
-					break;
-
-				/**
-				 * If this is the root section, render it instead of loading the parent
-				 */
-				if(!isset($jSection) || $jSection == $this->section) {
-					$this->json = true;
-					return;
-				}
-				$json = true;
-			}
 
 			/**
 			 * Render the parent if needed
@@ -562,7 +560,7 @@ class Jolt extends Node {
 				'slug' => $this->slug,
 				'section' => $this->section,
 				'href' => $_SERVER['REQUEST_URI'],
-				'html' => parent::build(false)
+				'html' => utf8_encode(parent::build(false))
 			));
 		} else {
 			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;");
