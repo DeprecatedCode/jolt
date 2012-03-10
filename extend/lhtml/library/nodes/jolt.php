@@ -207,6 +207,15 @@ class Jolt extends Node {
 			}
 
 			/**
+			 * Set all page:* elements to false
+			 *//*
+			foreach($child->children as $child) {
+				$start = substr($child->element, 0, 5);
+				if($start == 'page:')
+					$child->element = false;
+			}*/
+
+			/**
 			 * Check for page:content etc.
 			 */
 			$slug = $child->fake_element;
