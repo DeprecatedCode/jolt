@@ -207,15 +207,6 @@ class Jolt extends Node {
 			}
 
 			/**
-			 * Set all page:* elements to false
-			 *//*
-			foreach($child->children as $child) {
-				$start = substr($child->element, 0, 5);
-				if($start == 'page:')
-					$child->element = false;
-			}*/
-
-			/**
 			 * Check for page:content etc.
 			 */
 			$slug = $child->fake_element;
@@ -239,6 +230,8 @@ class Jolt extends Node {
 				}
 				break;
 			}
+
+			//dump($contents);
 
 			/**
 			 * Save the new override
@@ -430,6 +423,8 @@ class Jolt extends Node {
 		if(isset($this->attributes['parent'])) {
 
 			$parent = $this->attributes['parent'];
+			$parentName = explode('/');
+			$parentName = array_pop($parentName);
 
 			/**
 			 * Output the jolt tag as a div
@@ -491,6 +486,7 @@ class Jolt extends Node {
 			$v = "$dir/$parent";
 			if(pathinfo($v, PATHINFO_EXTENSION) !== 'lhtml')
 				$v .= '.lhtml';
+			$v = realpath($v);
 
 			if($jdata->__file__ == $v)
 				throw new Exception("Cannot use a jolt section as it's own parent");
