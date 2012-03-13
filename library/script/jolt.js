@@ -43,6 +43,8 @@
 			return status;
 		},
 		load: function(href) {
+			if(!Jolt.enabled)
+				return true;
 			/**
 			 * Don't load if no href defined
 			 */
@@ -62,13 +64,17 @@
 			return false;
 		},
 		link: function(e) {
+			if(!Jolt.enabled)
+				return true;
 			var el = $(e.currentTarget);
-			if(Jolt.enabled && el.attr('jolt') != 'disabled')
+			if(el.attr('jolt') != 'disabled')
 				return Jolt.load(el.attr('href'));
 			else
 				return true;
 		},
 		form: function(e) {
+			if(!Jolt.enabled)
+				return true;
 			console.log(e);
 			return false;
 		},
