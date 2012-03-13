@@ -26,6 +26,7 @@ class Jolt extends Node {
 	 * @author Nate Ferrero
 	 */
 	private static $placeholderContent = array();
+	private static $placeholderContentOverride = array();
 
 	/**
 	 * Special variables
@@ -113,32 +114,7 @@ class Jolt extends Node {
 		 * @author Nate Ferrero
 		 */
 		if(isset($this->attributes['placeholder'])) {
-			$this->element = false;
-			
-			/**
-			 * Check if placeholder content exists
-			 * @author Nate Ferrero
-			 */
-			$placeholder = $this->attributes['placeholder'];
-			if(isset(self::$placeholderContent[$placeholder])) {
-				$node = (self::$placeholderContent[$placeholder]);
-				$node->element = false;
-				$node->appendTo($this);
-			}
-
-			/**
-			 * Allow default content to be loaded by including
-			 * @author Nate Ferrero
-			 */
-			else if(isset($this->attributes['default'])) {
-				$include = $this->_nchild(':include', $this->_code);
-				$include->attributes['file'] = $this->attributes['default'];
-			}
-
-			/**
-			 * All done!
-			 */
-			return;
+			return $this->doPlaceholder();
 		}
 
 		/**
@@ -171,10 +147,84 @@ class Jolt extends Node {
 	}
 
 	/**
+	 * Placeholder logic
+	 * @author Nate Ferrero
+	 */
+	private function doPlaceholder() {
+		$this->element = false;
+		
+		/**
+		 * Check if placeholder content exists
+		 * @author Nate Ferrero
+		 */
+		$placeholder = $this->attributes['placeholder'];
+
+		/**
+		 * Check for page:content etc.
+		 */
+		if(isset(self::$placeholderContentOverride[$placeholder])) {
+			$node = self::$placeholderContentOverride[$placeholder];
+			$slug = $node->fake_element;
+			$applyTo = $node->getElementsByTagName("page:$slug");
+			foreach($applyTo as $applyNow) {
+				$applyNow->element = false;
+				$final = false;
+				if(isset(self::$placeholderContent[$slug])) {
+
+					/**
+					 * If this is a final="true" tag, prevent overriding
+					 * @author Nate Ferrero
+					 */
+					if(isset(self::$placeholderContent[$slug]->attributes['final']) &&
+						self::$placeholderContent[$slug]->attributes['final'] === 'true') {
+						$final = true;
+						break;
+					}
+					self::$placeholderContent[$slug]->element = false;
+					self::$placeholderContent[$slug]->appendTo($applyNow);
+				}
+				break;
+			}
+
+			/**
+			 * Override the content if not final
+			 * @author Nate Ferrero
+			 */
+			if(!$final)
+				self::$placeholderContent[$placeholder] = $node;
+		}
+
+		/**
+		 * Apply the placeholder to content
+		 */
+		if(isset(self::$placeholderContent[$placeholder])) {
+			$node = self::$placeholderContent[$placeholder];
+			$node->element = false;
+			$node->appendTo($this);
+		}
+
+		/**
+		 * Allow default content to be loaded by including
+		 * @author Nate Ferrero
+		 */
+		else if(isset($this->attributes['default'])) {
+			$include = $this->_nchild(':include', $this->_code);
+			$include->attributes['file'] = $this->attributes['default'];
+		}
+
+		/**
+		 * All done!
+		 */
+		return;
+	}
+
+	/**
 	 * Override template placeholder logic
 	 * @author Nate Ferrero
 	 */
 	private function doOverride() {
+
+		e\trace_enter("Jolt Template Override", "", $this->children);
 
 		/**
 		 * Get content areas and remove them from the jolt tag
@@ -207,40 +257,13 @@ class Jolt extends Node {
 			}
 
 			/**
-			 * Check for page:content etc.
+			 * Save the new overrides
 			 */
-			$slug = $child->fake_element;
-			$applyTo = $child->getElementsByTagName("page:$slug");
-			foreach ($applyTo as $applyNow) {
-				$applyNow->element = false;
-				$final = false;
-				if(isset(self::$placeholderContent[$slug])) {
-
-					/**
-					 * If this is a final="true" tag, prevent overriding
-					 * @author Nate Ferrero
-					 */
-					if(isset(self::$placeholderContent[$slug]->attributes['final']) &&
-						self::$placeholderContent[$slug]->attributes['final'] === 'true') {
-						$final = true;
-						break;
-					}
-					self::$placeholderContent[$slug]->element = false;
-					self::$placeholderContent[$slug]->appendTo($applyNow);
-				}
-				break;
-			}
-
-			//dump($contents);
-
-			/**
-			 * Save the new override
-			 */
-			if(!$final) {
-				e\trace("Jolt Placeholder Override", "", array('placeholder' => $slug, 'content' => $child));
-				self::$placeholderContent[$slug] = $child;
-			}
+			e\trace("Jolt Placeholder Override", "", array('placeholder' => $child->fake_element, 'content' => $child->children));
+			self::$placeholderContentOverride[$child->fake_element] = $child;
 		}
+
+		e\trace_exit();
 	}
 
 	/**
@@ -248,11 +271,11 @@ class Jolt extends Node {
 	 * @author Nate Ferrero
 	 */
 	private function doTemplate($template) {
-
-		$template = "$dir/$template";
 		
 		if(pathinfo($template, PATHINFO_EXTENSION) !== 'jolt')
 			$template .= '.jolt';
+
+		e\trace_enter("Jolt Template", "Processing `$template`");
 		
 		/**
 		 * Get content areas and remove them from the jolt tag
@@ -296,7 +319,7 @@ class Jolt extends Node {
 			/**
 			 * Get the current item
 			 */
-			$child = &$contents[$i];
+			$child = $contents[$i];
 			if(!($child instanceof Node)) {
 				if(trim($child) !== '')
 					throw new Exception("Cannot place raw content directly inside a `&lt;:jolt&gt;` tag,
@@ -318,7 +341,8 @@ class Jolt extends Node {
 			 * Add child to placeholder content
 			 * @author Nate Ferrero
 			 */
-			e\trace("Jolt Placeholder", "", array('placeholder' => $child->fake_element, 'content' => $child));
+			e\trace("Jolt Placeholder", "", array('placeholder' => $child->fake_element, 'content' => $child->children));
+
 			self::$placeholderContent[$child->fake_element] = $child;
 		}
 
@@ -326,7 +350,7 @@ class Jolt extends Node {
 		 * If there's no templates, return now
 		 */
 		if(count($templates) == 0)
-			return;
+			return e\trace_exit();
 
 		/**
 		 * Apply all templates to remaining elements
@@ -398,6 +422,8 @@ class Jolt extends Node {
 				}
 			}
 		}
+
+		e\trace_exit();
 	}
 	
 	/**
