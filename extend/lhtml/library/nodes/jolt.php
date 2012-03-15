@@ -29,6 +29,12 @@ class Jolt extends Node {
 	private static $placeholderContentOverride = array();
 
 	/**
+	 * Templates
+	 * @author Nate Ferrero
+	 */
+	private static $templates = array();
+
+	/**
 	 * Special variables
 	 */
 	private $slug;
@@ -213,6 +219,11 @@ class Jolt extends Node {
 		}
 
 		/**
+		 * Apply templates
+		 */
+		$this->applyTemplates();
+
+		/**
 		 * All done!
 		 */
 		return;
@@ -290,11 +301,10 @@ class Jolt extends Node {
 		/**
 		 * Process each jolt template and remove them from the output
 		 */
-		$templates = array();
 		$jolts = $stack->getElementsByTagName('jolt:templates');
 		foreach ($jolts as $jolt) {
 			foreach ($jolt->children as $template) {
-				$templates[] = $template;
+				self::$templates[] = $template;
 			}
 			$jolt->remove();
 		}
@@ -309,7 +319,7 @@ class Jolt extends Node {
 		 */
 		foreach ($this->attributes as $key => $value)
 			if($key !== ':load')
-				$jdata->$key = $this->_string_parse($value, true); /* Second argument means objects will be returned as-is;
+				$this->_data()->$key = $this->_string_parse($value, true); /* Second argument means objects will be returned as-is;
 				Because these variables are not final output to the page, we don't need them to strictly be strings */
 		
 		/**
@@ -346,19 +356,22 @@ class Jolt extends Node {
 			self::$placeholderContent[$child->fake_element] = $child;
 		}
 
-		/**
-		 * If there's no templates, return now
-		 */
-		if(count($templates) == 0)
-			return e\trace_exit();
+		return e\trace_exit();
+	}
+
+	/**
+	 * Apply templates to stack
+	 * @author Nate Ferrero
+	 */
+	private function applyTemplates() {
 
 		/**
-		 * Apply all templates to remaining elements
+		 * Apply all templates to stack
 		 * @author Nate Ferrero
 		 */
-		foreach ($templates as $template) {
+		foreach (self::$templates as $template) {
 			if (!($template instanceof Node)) continue;
-			$applyTo = $stack->getElementsByTagName($template->fake_element);
+			$applyTo = $this->getElementsByTagName($template->fake_element);
 			foreach ($applyTo as $applyNow) {
 				$applyNow->element = false;
 				$applyNow->_data = new Scope($applyNow);
@@ -422,8 +435,6 @@ class Jolt extends Node {
 				}
 			}
 		}
-
-		e\trace_exit();
 	}
 	
 	/**
