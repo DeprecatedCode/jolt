@@ -491,7 +491,7 @@ class Jolt extends Node {
 			 * Check for loading through JSON
 			 */
 			if(isset($_POST['@jolt'])) {
-				$status = $_POST['@jolt'];
+				$status = $_POST['@jolt'];dumpt($this);
 
 				/**
 				 * Get the root section
@@ -598,11 +598,11 @@ class Jolt extends Node {
 			 * @author Nate Ferrero
 			 */
 			e\disable_trace();
-			return json_encode(array(
+			return e\json_encode_safe(array(
 				'slug' => $this->slug,
 				'section' => $this->section,
 				'href' => $_SERVER['REQUEST_URI'],
-				'html' => utf8_encode(parent::build(false))
+				'html' => parent::build(false)
 			));
 		} else {
 			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;");

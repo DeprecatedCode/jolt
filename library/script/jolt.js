@@ -5,6 +5,15 @@
 		enabled: true,
 		disable: function() {
 			Jolt.enabled = false;
+			return Jolt.enabled;
+		},
+		enable: function() {
+			Jolt.enabled = true;
+			return Jolt.enabled;
+		},
+		toggle: function() {
+			Jolt.enabled = !Jolt.enabled;
+			return Jolt.enabled;
 		},
 		uri: function(href) {
 			var a = document.createElement('a');
