@@ -4,7 +4,7 @@ namespace Bundles\LHTML\Nodes;
 use Bundles\LHTML\Node;
 use Bundles\LHTML\Parser;
 use Bundles\LHTML\Scope;
-use Bundles\LHTML\RebuildWithNewStack;
+use Bundles\LHTML\UseAlternateStack;
 use Exception;
 use e;
 
@@ -86,14 +86,14 @@ class Jolt extends Node {
 		 * There was no section to get, load the default
 		 */
 		self::$sections[$section][$default] = '@default';
-		return Parser::parseFile($default);
+		return e::$lhtml->file($default)->parse();
 	}
 	
 	/**
 	 * Process the jolt tag
 	 * @author Nate Ferrero
 	 */
-	public function prebuild() {
+	public function ready() {
 
 		/**
 		 * If this node has already been finalized, return
@@ -129,7 +129,7 @@ class Jolt extends Node {
 		 */
 		if(!isset($this->attributes['template']))
 			throw new Exception('Jolt template is not specified');
-
+		
 		/**
 		 * Disable rendering of this element
 		 * @author Nate Ferrero
@@ -296,7 +296,7 @@ class Jolt extends Node {
 		/**
 		 * Load the .jolt file
 		 */
-		$stack = Parser::parseFile($template);
+		$stack = e::$lhtml->file($template)->parse();
 
 		/**
 		 * Process each jolt template and remove them from the output
@@ -460,7 +460,7 @@ class Jolt extends Node {
 		if(isset($this->attributes['parent'])) {
 
 			$parent = $this->attributes['parent'];
-			$parentName = explode('/');
+			$parentName = explode('/', $parent);
 			$parentName = array_pop($parentName);
 
 			/**
@@ -486,12 +486,12 @@ class Jolt extends Node {
 			 */
 			if(!$outclude)
 				return;
-
+			
 			/**
 			 * Check for loading through JSON
 			 */
 			if(isset($_POST['@jolt'])) {
-				$status = $_POST['@jolt'];dumpt($this);
+				$status = $_POST['@jolt'];
 
 				/**
 				 * Get the root section
@@ -532,21 +532,24 @@ class Jolt extends Node {
 			 * Render the parent if needed
 			 */
 			if(!isset(self::$parents[$v])) {
-				self::$parents[$v] = new Jolt(false);
+				self::$parents[$v] = new Jolt();
 				self::$parents[$v]->slug = md5($v);
 				self::$parents[$v]->finalized = true;
-				if($json)
+				if($this->json)
 					self::$parents[$v]->json = true;
-				$node = Parser::parseFile($v);
-				$node->appendTo(self::$parents[$v]);
+				/**
+				 * Parse the parent into the new Jolt node
+				 * @author Nate Ferrero
+				 */
+				self::$parents[$v] = e::$lhtml->file($v)->parse(self::$parents[$v]);
 			}
 
 			/**
-			 * Rebuild the stack from the parent
+			 * Use a new stack from the parent
 			 */
-			$rebuild = new RebuildWithNewStack;
-			$rebuild->stack = self::$parents[$v];
-			throw $rebuild;
+			$use = new UseAlternateStack;
+			$use->stack = self::$parents[$v];
+			throw $use;
 		}
 
 		/**
@@ -586,10 +589,10 @@ class Jolt extends Node {
 	 * Custom build for JSON output if loaded through Jolt/activate.js
 	 * @author Nate Ferrero
 	 */
-	public function build() {
+	public function build($pre = true) {
 
-		$this->_init_scope();
-		$this->prebuild();
+		if($pre)
+			$this->_init_scope();
 
 		if($this->json) {
 
@@ -605,7 +608,7 @@ class Jolt extends Node {
 				'html' => parent::build(false)
 			));
 		} else {
-			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;");
+			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;", null, 5);
 			return parent::build(false);
 		}
 	}
