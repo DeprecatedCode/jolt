@@ -51,7 +51,7 @@
 			}
 			return status;
 		},
-		load: function(href) {
+		load: function(href, method, data, skipState) {
 			if(!Jolt.enabled)
 				return true;
 			/**
@@ -67,9 +67,32 @@
 			if(location.host != uri.host)
 				return true;
 			href = '' + uri.pathname + uri.search;
-			if(console) console.log("Loading", href);
 			var status = Jolt.status();
-			$.post(href, {'@jolt': status}, Jolt.show, 'json');
+			if(typeof method === 'string')
+				method = method.toLowerCase();
+
+			/**
+			 * Handle GET and POST requests
+			 * @author Nate Ferrero
+			 */
+			if(typeof method !== 'string' || method !== 'post') {
+				method = 'get';
+				if(typeof data == 'object')
+					href += '?' + $.param(data);
+				if(typeof data == 'string')
+					href += '?' + data;
+				data = {};
+			}
+
+			if(typeof data === 'undefined')
+				data = {};
+			if(typeof data === 'object')
+				data['@jolt'] = status;
+			if(typeof data === 'string')
+				data = (data.length ? data + '&' : '') + '@jolt=' + $.param(status);
+
+			if(console) console.log('Jolt ' + href);
+			$.post(href, data, (skipState ? Jolt.showNoState : Jolt.show), 'json');
 			return false;
 		},
 		link: function(e) {
@@ -84,23 +107,37 @@
 		form: function(e) {
 			if(!Jolt.enabled)
 				return true;
-			console.log(e);
-			return false;
+			var form = $(e.target);
+			var data = form.serialize();
+			var method = form.attr('method');
+			var action = form.attr('action');
+			if(!action) action = window.location.href.split('?')[0];
+			return Jolt.load(action, method, data);
 		},
-		show: function(data) {
+		showNoState: function(data) {
 			var section = $('.jolt-section-' + data.section);
 			if(!section.length)
 				throw new Error("Jolt section '"+data.section+"' not found");
-			window.history.pushState({}, '', data.href);
 			section.html(data.html);
+		},
+		show: function(data) {
+			window.history.pushState({href: data.href}, '', data.href);
+			Jolt.showNoState(data);
 		},
 		init: function() {
 			$('body').on('click', 'a', Jolt.link);
 			$('body').on('submit', 'form', Jolt.form);
 		},
 		state: function(e) {
-			console.log("State", e.state);
-		}
+			if(!e.state) {
+				if(Jolt.initialHref === null)
+					return Jolt.initialHref = window.location.href;
+				var href = Jolt.initialHref;
+			} else
+				var href = e.state.href;
+			Jolt.load(href, 'get', null, true);
+		},
+		initialHref: null
 	};
 	$(Jolt.init);
 	window.onpopstate = Jolt.state;
