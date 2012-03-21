@@ -96,6 +96,13 @@ class Jolt extends Node {
 	public function ready() {
 
 		/**
+		 * We must ready children first, so page functionality can work
+		 * Pass false to avoid infinite loop, since we're within ready()
+		 * @author Nate Ferrero
+		 */
+		$this->_ready(false);
+
+		/**
 		 * If this node has already been finalized, return
 		 */
 		if($this->finalized)
