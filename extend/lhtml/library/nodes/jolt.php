@@ -497,19 +497,14 @@ class Jolt extends Node {
 			/**
 			 * Check for loading through JSON
 			 */
-			if(isset($_POST['@jolt'])) {
-				$status = $_POST['@jolt'];
+			if(isset($_REQUEST['@jolt'])) {
+				$status = $_REQUEST['@jolt'];
 
 				/**
-				 * Get the root section
+				 * Get the root section as JSON, this will force proper loading
+				 * @author Nate Ferrero 
 				 */
-				foreach($status as $jSection => $jSlug)
-					break;
-
-				/**
-				 * If this is the root section, render it instead of loading the parent
-				 */
-				if(!isset($jSection) || $jSection == $this->section) {
+				if(array_key_exists($this->section, $status)) {
 					$this->json = true;
 					return;
 				}
