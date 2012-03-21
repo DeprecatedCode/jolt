@@ -497,8 +497,8 @@ class Jolt extends Node {
 			/**
 			 * Check for loading through JSON
 			 */
-			if(isset($_REQUEST['@jolt'])) {
-				$status = $_REQUEST['@jolt'];
+			if(isset($_POST['@jolt'])) {
+				$status = $_POST['@jolt'];
 
 				/**
 				 * Get the root section as JSON, this will force proper loading
@@ -603,6 +603,7 @@ class Jolt extends Node {
 			 * @author Nate Ferrero
 			 */
 			e\disable_trace();
+			header('Content-Type: text/json');
 			return e\json_encode_safe(array(
 				'slug' => $this->slug,
 				'section' => $this->section,

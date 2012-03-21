@@ -115,13 +115,16 @@
 			return Jolt.load(action, method, data);
 		},
 		showNoState: function(data) {
+			if(data && data.redirect)
+				return Jolt.load(data.redirect);
 			var section = $('.jolt-section-' + data.section);
 			if(!section.length)
 				throw new Error("Jolt section '"+data.section+"' not found");
 			section.html(data.html);
 		},
 		show: function(data) {
-			window.history.pushState({href: data.href}, '', data.href);
+			if(data && data.href)
+				window.history.pushState({href: data.href}, '', data.href);
 			Jolt.showNoState(data);
 		},
 		init: function() {

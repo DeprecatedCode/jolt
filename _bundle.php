@@ -20,4 +20,16 @@ class Bundle {
 		e\complete();
 	}
 
+	/**
+	 * Handle Jolt redirects
+	 * @author Nate Ferrero
+	 */
+	public function _on_redirect($url) {
+		if(!isset($_POST['@jolt']))
+			return;
+		header('Content-Type: text/json');
+		echo e\json_encode_safe(array('redirect' => $url));
+		exit;
+	}
+
 }
