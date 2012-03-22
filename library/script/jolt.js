@@ -94,7 +94,7 @@
 			}
 
 			if(console) console.log('Jolt ' + href);
-			$.post(href, data, (skipState ? Jolt.showNoState : Jolt.show));
+			$.post(href, data, Jolt.showGen(href, skipState ? false : true));
 			return false;
 		},
 		link: function(e) {
@@ -116,23 +116,42 @@
 			if(!action) action = window.location.href.split('?')[0];
 			return Jolt.load(action, method, data);
 		},
-		showNoState: function(data) {
-			if(typeof data !== 'object')
-				return $('.joltOverflow').find('.content').html(data).end().fadeIn();
-			if(data && data.redirect)
-				return Jolt.load(data.redirect);
-			var section = $('.jolt-section-' + data.section);
-			if(!section.length)
-				throw new Error("Jolt section '"+data.section+"' not found");
-			Jolt.matchLinks(data.href);
-			section.html(data.html);
-			if(window.onJoltUpdate)
-				window.onJoltUpdate(data.href);
-		},
-		show: function(data) {
-			if(typeof data === 'object' && data.href)
-				window.history.pushState({href: data.href}, '', data.href);
-			Jolt.showNoState(data);
+		showGen: function(href, pushState) {
+			return function(data) {
+				if(typeof data !== 'object')
+					return $('.joltOverflow').find('.content').attr('src', href).end().show();
+
+				/**
+				 * Handle redirects
+				 * @author Nate Ferrero
+				 */
+				if(data && data.redirect)
+					return Jolt.load(data.redirect);
+
+				/**
+				 * Locate section
+				 * @author Nate Ferrero
+				 */
+				var section = $('.jolt-section-' + data.section);
+				if(!section.length)
+					throw new Error("Jolt section '"+data.section+"' not found");
+
+				/**
+				 * Push state
+				 * @author Nate Ferrero
+				 */
+				if(pushState && typeof data === 'object' && data.href)
+					window.history.pushState({href: data.href}, '', data.href);
+
+				/**
+				 * Present result
+				 * @author Nate Ferrero
+				 */
+				Jolt.matchLinks(data.href);
+				section.html(data.html);
+				if(window.onJoltUpdate)
+					window.onJoltUpdate(data.href);
+			}
 		},
 		init: function() {
 			$('body').on('click', 'a', Jolt.link);
