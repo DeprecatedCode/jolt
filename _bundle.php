@@ -32,4 +32,11 @@ class Bundle {
 		exit;
 	}
 
+	/**
+	 * Prevent Information Saving
+	 */
+	public function _on_informationSet($model, $key, $value) {
+		if($key === '@jolt')
+			return false;
+	}
 }

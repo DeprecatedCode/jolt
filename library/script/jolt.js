@@ -120,10 +120,10 @@
 			var section = $('.jolt-section-' + data.section);
 			if(!section.length)
 				throw new Error("Jolt section '"+data.section+"' not found");
-			if(window.onJoltUpdate)
-				window.onJoltUpdate(data.href);
 			Jolt.matchLinks(data.href);
 			section.html(data.html);
+			if(window.onJoltUpdate)
+				window.onJoltUpdate(data.href);
 		},
 		show: function(data) {
 			if(data && data.href)
