@@ -88,8 +88,10 @@
 				data = {};
 			if(typeof data === 'object')
 				data['@jolt'] = status;
-			if(typeof data === 'string')
-				data = (data.length ? data + '&' : '') + '@jolt=' + $.param(status);
+			if(typeof data === 'string') {
+				var jdata = {'@jolt': status};
+				data = (data.length ? data + '&' : '') + $.param(jdata);
+			}
 
 			if(console) console.log('Jolt ' + href);
 			$.post(href, data, (skipState ? Jolt.showNoState : Jolt.show), 'json');
