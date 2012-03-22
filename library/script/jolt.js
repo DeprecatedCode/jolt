@@ -120,6 +120,9 @@
 			var section = $('.jolt-section-' + data.section);
 			if(!section.length)
 				throw new Error("Jolt section '"+data.section+"' not found");
+			if(window.onJoltUpdate)
+				window.onJoltUpdate(data.href);
+			Jolt.matchLinks(data.href);
 			section.html(data.html);
 		},
 		show: function(data) {
@@ -140,7 +143,49 @@
 				var href = e.state.href;
 			Jolt.load(href, 'get', null, true);
 		},
-		initialHref: null
+		initialHref: null,
+		selectedClass: 'active',
+		setSelectedClass: function(cls) {
+			Jolt.selectedClass = cls;
+		},
+		rootPath: '',
+		setRootPath: function(path) {
+			Jolt.rootPath = path;
+		},
+		matchLinks: function(href) {
+			var uri = Jolt.uri(href);
+			if(location.host != uri.host)
+				return false;
+			var path = uri.pathname.split('/');
+			path.shift();
+			var rpath = Jolt.rootPath.split('/');
+			if(rpath[0] == '')
+				rpath.shift();
+			while(rpath[0] && path[0] && rpath[0] == path[0]) {
+				rpath.shift();
+				path.shift();
+			}
+			var mpath = '', paths = {};
+			while(path.length) {
+				mpath += (mpath == '' ? '' : '/') + path.shift();
+				paths[mpath] = true;
+			}
+			var jsc = $('*[jolt-selected-class]');
+			for(var i = 0; i < jsc.length; i++) {
+				var j = $(jsc[i]);
+				var cls = j.attr('jolt-selected-class');
+				j.find('.'+cls).removeClass(cls);
+				var items = j.find('a[jolt-match]');
+				for(var j = 0; j < items.length; j++) {
+					var matches = $(items[j]).attr('jolt-match').split(',');
+					for(var k = 0; k < matches.length; k++) {
+						if(paths[matches[k]]) {
+							$(items[j]).addClass(cls);
+						}
+					}
+				}
+			}
+		}
 	};
 	$(Jolt.init);
 	window.onpopstate = Jolt.state;
