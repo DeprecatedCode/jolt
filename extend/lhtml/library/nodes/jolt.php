@@ -603,13 +603,14 @@ class Jolt extends Node {
 			 * @author Nate Ferrero
 			 */
 			e\disable_trace();
-			header('Content-Type: text/json');
-			return e\json_encode_safe(array(
+			$data = e\json_encode_safe(array(
 				'slug' => $this->slug,
 				'section' => $this->section,
 				'href' => $_SERVER['REQUEST_URI'],
 				'html' => parent::build(false)
 			));
+			e::$lhtml->setContentType('text/json');
+			return $data;
 		} else {
 			e\trace("Jolt Build", "&lt;$this->fake_element " . $this->_attributes_parse() . "&gt;", null, 5);
 			return parent::build(false);

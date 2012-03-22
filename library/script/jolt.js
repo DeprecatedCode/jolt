@@ -94,7 +94,7 @@
 			}
 
 			if(console) console.log('Jolt ' + href);
-			$.post(href, data, (skipState ? Jolt.showNoState : Jolt.show), 'json');
+			$.post(href, data, (skipState ? Jolt.showNoState : Jolt.show));
 			return false;
 		},
 		link: function(e) {
@@ -117,6 +117,8 @@
 			return Jolt.load(action, method, data);
 		},
 		showNoState: function(data) {
+			if(typeof data !== 'object')
+				return $('.joltOverflow').find('.content').html(data).end().fadeIn();
 			if(data && data.redirect)
 				return Jolt.load(data.redirect);
 			var section = $('.jolt-section-' + data.section);
@@ -128,7 +130,7 @@
 				window.onJoltUpdate(data.href);
 		},
 		show: function(data) {
-			if(data && data.href)
+			if(typeof data === 'object' && data.href)
 				window.history.pushState({href: data.href}, '', data.href);
 			Jolt.showNoState(data);
 		},
