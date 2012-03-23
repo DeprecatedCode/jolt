@@ -43,6 +43,17 @@ class Jolt extends Node {
 	private $json = false;
 
 	/**
+	 * Allow setting to the place holder
+	 * @author Kelly Becker
+	 */
+	public static function setPlaceholder($name, $var, $position = null) {
+		if(is_numeric($position))
+			self::$placeholderContent[$name][$position] = $var;
+		else
+			self::$placeholderContent[$name] = $var;
+	}
+
+	/**
 	 * Save a section stack for later use
 	 * @author Nate Ferrero
 	 */
@@ -212,8 +223,26 @@ class Jolt extends Node {
 		 */
 		if(isset(self::$placeholderContent[$placeholder])) {
 			$node = self::$placeholderContent[$placeholder];
-			$node->element = false;
-			$node->appendTo($this);
+
+			/**
+			 * Sort the nodes by keys
+			 * @author Kelly Becker
+			 */
+			if(is_array($node)) ksort($node);
+
+			/**
+			 * If node is an array loop through them and append one by one
+			 * @author Kelly Becker
+			 */
+			if(is_array($node)) foreach($node as $n) {
+				$n->element = false;
+				$n->appendTo($this);	
+			}
+			
+			else {
+				$node->element = false;
+				$node->appendTo($this);
+			}
 		}
 
 		/**
