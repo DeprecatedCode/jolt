@@ -42,6 +42,10 @@ class Jolt extends Node {
 	private $finalized = false;
 	private $json = false;
 
+	/**
+	 * Allow setting to the place holder
+	 * @author Kelly Becker
+	 */
 	public static function setPlaceholder($name, $var) {
 		self::$placeholderContent[$name] = $var;
 	}
