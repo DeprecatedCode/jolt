@@ -101,9 +101,12 @@
 			if(!Jolt.enabled)
 				return true;
 			var el = $(e.currentTarget);
-			if(el.attr('jolt') != 'disabled')
-				return Jolt.load(el.attr('href'));
-			else
+			if(el.attr('jolt') != 'disabled') {
+				var normal = Jolt.load(el.attr('href'));
+				if(!normal)
+					el.append($('<div>').addClass("loading-icon"));
+				return normal;
+			} else
 				return true;
 		},
 		form: function(e) {
@@ -118,8 +121,15 @@
 		},
 		showGen: function(href, pushState) {
 			return function(data) {
+				$(".loading-icon").remove();
 				if(typeof data !== 'object')
-					return $('.joltOverflow').find('.content').attr('src', href).end().show();
+					return $('.joltOverflow').children('.wrapper').append(
+						/**
+						 * Add the iframe
+						 * @author Nate Ferrero
+						 */
+						$('<iframe>').addClass('content').attr('src', href)
+					).end().show();
 
 				/**
 				 * Handle redirects
