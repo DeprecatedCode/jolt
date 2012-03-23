@@ -27,7 +27,7 @@ class Bundle {
 	public function _on_redirect($url) {
 		if(!isset($_POST['@jolt']))
 			return;
-		header('Content-Type: text/json');
+		header('Content-Type: text/json', true);
 		echo e\json_encode_safe(array('redirect' => $url));
 		exit;
 	}
@@ -38,5 +38,15 @@ class Bundle {
 	public function _on_informationSet($model, $key, $value) {
 		if($key === '@jolt')
 			return false;
+	}
+
+	/**
+	 * Redirect to exception page if on jolt
+	 * @author Nate Ferrero
+	 */
+	public function _on_exceptionSaved($exception) {
+		if(!isset($_POST['@jolt']))
+			return;
+		e\redirect('/@exceptions/' . $exception->id);
 	}
 }
