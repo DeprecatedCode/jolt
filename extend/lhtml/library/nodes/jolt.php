@@ -46,8 +46,11 @@ class Jolt extends Node {
 	 * Allow setting to the place holder
 	 * @author Kelly Becker
 	 */
-	public static function setPlaceholder($name, $var) {
-		self::$placeholderContent[$name] = $var;
+	public static function setPlaceholder($name, $var, $position = null) {
+		if(is_numeric($position))
+			self::$placeholderContent[$name][$position] = $var;
+		else
+			self::$placeholderContent[$name] = $var;
 	}
 
 	/**
@@ -220,8 +223,20 @@ class Jolt extends Node {
 		 */
 		if(isset(self::$placeholderContent[$placeholder])) {
 			$node = self::$placeholderContent[$placeholder];
-			$node->element = false;
-			$node->appendTo($this);
+
+			/**
+			 * If node is an array loop through them and append one by one
+			 * @author Kelly Becker
+			 */
+			if(is_array($node)) foreach($node as $n) {
+				$n->element = false;
+				$n->appendTo($this);	
+			}
+			
+			else {
+				$node->element = false;
+				$node->appendTo($this);
+			}
 		}
 
 		/**
