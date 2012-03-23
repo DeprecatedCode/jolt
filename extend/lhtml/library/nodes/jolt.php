@@ -225,6 +225,12 @@ class Jolt extends Node {
 			$node = self::$placeholderContent[$placeholder];
 
 			/**
+			 * Sort the nodes by keys
+			 * @author Kelly Becker
+			 */
+			if(is_array($node)) ksort($node);
+
+			/**
 			 * If node is an array loop through them and append one by one
 			 * @author Kelly Becker
 			 */
