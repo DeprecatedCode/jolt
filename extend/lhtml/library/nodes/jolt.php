@@ -58,7 +58,7 @@ class Jolt extends Node {
 	 * @author Kelly Becker
 	 */
 	public static function resetPlaceholder($ns = 'global') {
-		self::$placeholderContent[$ns][$name] = array();
+		self::$placeholderContent[$ns] = array();
 	}
 
 	/**
@@ -187,9 +187,9 @@ class Jolt extends Node {
 
 		/**
 		 * Get the namespace
+		 * @author Kelly Becker
 		 */
 		$ns = !$this->_data()->namespace ? 'global' : $this->_data()->namespace;
-		var_dump($ns);
 		
 		/**
 		 * Check if placeholder content exists
