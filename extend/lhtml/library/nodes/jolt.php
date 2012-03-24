@@ -628,6 +628,12 @@ class Jolt extends Node {
 		if($this->json) {
 
 			/**
+			 * Delay for testing
+			 * @author Nate Ferrero
+			 */
+			//sleep(25);
+
+			/**
 			 * Output in JSON format
 			 * @author Nate Ferrero
 			 */

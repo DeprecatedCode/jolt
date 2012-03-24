@@ -113,6 +113,10 @@
 			if(!Jolt.enabled)
 				return true;
 			var form = $(e.target);
+			var id = form.attr('id');
+			var loading = $('.' + id + '-jolt-loading');
+			if(loading.length)
+				loading.append($('<div>').addClass("loading-icon"));
 			var data = form.serialize();
 			var method = form.attr('method');
 			var action = form.attr('action');
@@ -121,7 +125,7 @@
 		},
 		showGen: function(href, pushState) {
 			return function(data) {
-				$(".loading-icon").remove();
+				$(".loading-icon").fadeOut(function() {$(this).remove()});
 				if(typeof data !== 'object')
 					return $('.joltOverflow').children('.wrapper').append(
 						/**
