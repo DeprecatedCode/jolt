@@ -51,9 +51,23 @@
 			}
 			return status;
 		},
+		reload: function() {
+			if(!Jolt.enabled)
+				return window.location.reload();
+
+			Jolt.load(window.location.href, 'get', null, true);
+		},
 		load: function(href, method, data, skipState) {
 			if(!Jolt.enabled)
 				return true;
+
+			/**
+			 * If we have null data make it an empty object
+			 */
+			if(data === null) {
+				data = {};
+			}
+
 			/**
 			 * Don't load if no href defined
 			 */

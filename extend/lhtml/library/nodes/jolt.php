@@ -46,11 +46,38 @@ class Jolt extends Node {
 	 * Allow setting to the place holder
 	 * @author Kelly Becker
 	 */
-	public static function setPlaceholder($name, $var, $position = null) {
+	public static function setPlaceholder($name, $var, $position = null, $ns = 'global') {
 		if(is_numeric($position))
-			self::$placeholderContent[$name][$position] = $var;
+			self::$placeholderContent[$ns][$name][$position] = $var;
 		else
-			self::$placeholderContent[$name] = $var;
+			self::$placeholderContent[$ns][$name] = $var;
+	}
+
+	/**
+	 * Allow setting to the place holder override
+	 * @author Kelly Becker
+	 */
+	public static function setPlaceholderOverride($name, $var, $position = null, $ns = 'global') {
+		if(is_numeric($position))
+			self::$placeholderContentOverride[$ns][$name][$position] = $var;
+		else
+			self::$placeholderContentOverride[$ns][$name] = $var;
+	}
+
+	/**
+	 * Reset placeholder data
+	 * @author Kelly Becker
+	 */
+	public static function resetPlaceholder($ns = 'global') {
+		self::$placeholderContent[$ns] = array();
+	}
+
+	/**
+	 * Reset placeholder data
+	 * @author Kelly Becker
+	 */
+	public static function resetPlaceholderOverride($ns = 'global') {
+		self::$placeholderContentOverride[$ns] = array();
 	}
 
 	/**
@@ -176,6 +203,12 @@ class Jolt extends Node {
 	 */
 	private function doPlaceholder() {
 		$this->element = false;
+
+		/**
+		 * Get the namespace
+		 * @author Kelly Becker
+		 */
+		$ns = !$this->_data()->namespace ? 'global' : $this->_data()->namespace;
 		
 		/**
 		 * Check if placeholder content exists
@@ -186,26 +219,26 @@ class Jolt extends Node {
 		/**
 		 * Check for page:content etc.
 		 */
-		if(isset(self::$placeholderContentOverride[$placeholder])) {
-			$node = self::$placeholderContentOverride[$placeholder];
+		if(isset(self::$placeholderContentOverride[$ns][$placeholder])) {
+			$node = self::$placeholderContentOverride[$ns][$placeholder];
 			$slug = $node->fake_element;
 			$applyTo = $node->getElementsByTagName("page:$slug");
 			foreach($applyTo as $applyNow) {
 				$applyNow->element = false;
 				$final = false;
-				if(isset(self::$placeholderContent[$slug])) {
+				if(isset(self::$placeholderContent[$ns][$slug])) {
 
 					/**
 					 * If this is a final="true" tag, prevent overriding
 					 * @author Nate Ferrero
 					 */
-					if(isset(self::$placeholderContent[$slug]->attributes['final']) &&
-						self::$placeholderContent[$slug]->attributes['final'] === 'true') {
+					if(isset(self::$placeholderContent[$ns][$slug]->attributes['final']) &&
+						self::$placeholderContent[$ns][$slug]->attributes['final'] === 'true') {
 						$final = true;
 						break;
 					}
-					self::$placeholderContent[$slug]->element = false;
-					self::$placeholderContent[$slug]->appendTo($applyNow);
+					self::$placeholderContent[$ns][$slug]->element = false;
+					self::$placeholderContent[$ns][$slug]->appendTo($applyNow);
 				}
 				break;
 			}
@@ -215,14 +248,14 @@ class Jolt extends Node {
 			 * @author Nate Ferrero
 			 */
 			if(!$final)
-				self::$placeholderContent[$placeholder] = $node;
+				self::$placeholderContent[$ns][$placeholder] = $node;
 		}
 
 		/**
 		 * Apply the placeholder to content
 		 */
-		if(isset(self::$placeholderContent[$placeholder])) {
-			$node = self::$placeholderContent[$placeholder];
+		if(isset(self::$placeholderContent[$ns][$placeholder])) {
+			$node = self::$placeholderContent[$ns][$placeholder];
 
 			/**
 			 * Sort the nodes by keys
@@ -307,7 +340,7 @@ class Jolt extends Node {
 			 * Save the new overrides
 			 */
 			e\trace("Jolt Placeholder Override", "", array('placeholder' => $child->fake_element, 'content' => $child->children));
-			self::$placeholderContentOverride[$child->fake_element] = $child;
+			self::setPlaceholderOverride($child->fake_element, $child);
 		}
 
 		e\trace_exit();
@@ -389,7 +422,7 @@ class Jolt extends Node {
 			 */
 			e\trace("Jolt Placeholder", "", array('placeholder' => $child->fake_element, 'content' => $child->children));
 
-			self::$placeholderContent[$child->fake_element] = $child;
+			self::setPlaceholder($child->fake_element, $child);
 		}
 
 		return e\trace_exit();
