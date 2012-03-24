@@ -329,7 +329,7 @@ class Jolt extends Node {
 			/**
 			 * Allow transparent nodes
 			 */
-			if(isset($child->joltTransparent) && $child->joltTransparent) {
+			if(isset($child->transparent) && $child->transparent) {
 				$all = $child->detachAllChildren();
 				foreach($all as $item)
 					$contents[] = $item;
@@ -409,7 +409,7 @@ class Jolt extends Node {
 			/**
 			 * Allow transparent nodes
 			 */
-			if(isset($child->joltTransparent) && $child->joltTransparent) {
+			if(isset($child->transparent) && $child->transparent) {
 				$all = $child->detachAllChildren();
 				foreach($all as $item)
 					$contents[] = $item;
