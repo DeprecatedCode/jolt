@@ -91,10 +91,10 @@
 			 */
 			if(typeof method !== 'string' || method !== 'post') {
 				method = 'get';
-				if(typeof data == 'object')
-					href += '?' + $.param(data);
-				if(typeof data == 'string')
-					href += '?' + data;
+				if(typeof data == 'object' && data.length)
+					href += (href.indexOf('?') > 0 ? '&' : '?') + $.param(data);
+				if(typeof data == 'string' && data.length)
+					href += (href.indexOf('?') > 0 ? '&' : '?') + data;
 				data = {};
 			}
 
@@ -192,6 +192,14 @@
 				var href = Jolt.initialHref;
 			} else
 				var href = e.state.href;
+
+			/**
+			 * Show loading icon on match
+			 * @author Nate Ferrero
+			 */
+			$('a[href="'+href.split('?')[0]+'"]')
+				.append($('<div>').addClass("loading-icon"));
+
 			Jolt.load(href, 'get', null, true);
 		},
 		initialHref: null,

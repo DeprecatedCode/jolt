@@ -633,7 +633,11 @@ class Jolt extends Node {
 			 * Append the section before building
 			 */
 			$node = self::getSection($this->section, $v);
-			$node->appendTo($this);
+			if(!is_object($node) || !($node instanceof Node))
+				dump($node);
+			else
+			//throw new Exception("Jolt section `$this->section` not found in file `$v`");
+				$node->appendTo($this);
 
 			/**
 			 * Display the jolt section as a div
