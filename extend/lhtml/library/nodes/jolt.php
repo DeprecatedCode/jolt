@@ -219,8 +219,12 @@ class Jolt extends Node {
 		/**
 		 * Check for page:content etc.
 		 */
-		if(isset(self::$placeholderContentOverride[$ns][$placeholder])) {
-			$node = self::$placeholderContentOverride[$ns][$placeholder];
+		if(isset(self::$placeholderContentOverride[$ns]))
+			$ons = $ns;
+		else
+			$ons = 'global';
+		if(isset(self::$placeholderContentOverride[$ons][$placeholder])) {
+			$node = self::$placeholderContentOverride[$ons][$placeholder];
 			$slug = $node->fake_element;
 			$applyTo = $node->getElementsByTagName("page:$slug");
 			foreach($applyTo as $applyNow) {
