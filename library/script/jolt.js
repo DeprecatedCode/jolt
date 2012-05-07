@@ -2,6 +2,12 @@
 	if(typeof window.$ == 'undefined' || typeof window.$.fn == 'undefined')
 		throw new Error("Jolt requires jQuery or Zepto");
 	window.Jolt = {
+		/**
+		 * Capitalize string function
+		 */
+		capitalize: function(str) {
+			return str.charAt(0).toUpperCase() + str.slice(1);
+		},
 		enabled: true,
 		disable: function() {
 			Jolt.enabled = false;
@@ -78,9 +84,21 @@
 			 * Continue if loading from another domain
 			 */
 			var uri = Jolt.uri(href);
+			href = '' + uri.pathname + uri.search;
 			if(location.host != uri.host)
 				return true;
-			href = '' + uri.pathname + uri.search;
+
+			/**
+			 * Allow Jolt to be restricted to a portal
+			 */
+			if(Jolt.portal) {
+				if(Jolt.portal != uri.pathname.substr(1, Jolt.portal.length))
+					return Jolt.frame(href);
+			}
+
+			/**
+			 * Prepare request
+			 */
 			var status = Jolt.status();
 			if(typeof method === 'string')
 				method = method.toLowerCase();
@@ -108,7 +126,7 @@
 			}
 
 			if(console) console.log('Jolt ' + href);
-			$.post(href, data, Jolt.showGen(href, skipState ? false : true));
+			$.post(href, data, Jolt.showGen(href, skipState ? false : true), 'json');
 			return false;
 		},
 		link: function(e) {
@@ -137,17 +155,53 @@
 			if(!action) action = window.location.href.split('?')[0];
 			return Jolt.load(action, method, data);
 		},
+		frame: function(href) {
+			$('.joltOverflow').children('.wrapper').append(
+				/**
+				 * Add iframe
+				 * @author Nate Ferrero
+				 */
+				$('<iframe>').addClass('content').attr('src', href).load(function() {
+					/**
+					 * Hide Loading Icon
+					 */
+					$(".loading-icon").fadeOut(function() {$(this).remove()});
+				})
+			).end().show();
+
+			/**
+			 * Prevent further loading
+			 */
+			return false;
+		},
 		showGen: function(href, pushState) {
 			return function(data) {
 				$(".loading-icon").fadeOut(function() {$(this).remove()});
 				if(typeof data !== 'object')
-					return $('.joltOverflow').children('.wrapper').append(
-						/**
-						 * Add the iframe
-						 * @author Nate Ferrero
-						 */
-						$('<iframe>').addClass('content').attr('src', href)
-					).end().show();
+					return Jolt.frame(href);
+
+				/**
+				 * Handle messages
+				 * @author Nate Ferrero
+				 */
+				if(data && data.messages) { /* Eventually make sure errors go to the right place */
+					var messages = $(/*'.jolt-section-' + data.section + */' .jolt-messages').first();
+					messages.show();
+					var show = messages.length > 0;
+					data.messages.forEach(function(message) {
+						if(show) {
+							var mdiv = $("<div>").addClass('messages').addClass(message.type)
+								.html('<span class="type">'+Jolt.capitalize(message.type)+'</span><span>'+message.message+'</span>');
+							messages.append(mdiv);
+
+							setTimeout(function() {
+								mdiv.fadeOut(200, function(){mdiv.remove();});
+							}, 2000);
+						} else
+							alert(message.type + ': ' + message.message);
+					});
+					return;
+				}
 
 				/**
 				 * Handle redirects

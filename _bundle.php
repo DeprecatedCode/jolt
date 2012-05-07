@@ -44,9 +44,21 @@ class Bundle {
 	 * Redirect to exception page if on jolt
 	 * @author Nate Ferrero
 	 */
-	public function _on_exceptionSaved($exception) {
+	public function _on_exception($exception) {
 		if(!isset($_POST['@jolt']))
 			return;
-		e\redirect('/@exceptions/' . $exception->id);
+		
+		/**
+		 * Instead - let's show the error on the jolt page
+		 */
+		echo e\json_encode_safe(array('messages' => array(
+			array(
+				'type' => 'error',
+				'message' => $exception->getMessage()
+			)
+		)));
+		exit;
+
+		//e\redirect('/@exceptions/' . $exception->id);
 	}
 }
