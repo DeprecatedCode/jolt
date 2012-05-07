@@ -198,7 +198,7 @@
 								mdiv.fadeOut(200, function(){mdiv.remove();});
 							}, 2000);
 						} else
-							alert(message.type + ': ' + message.message);
+							alert(Jolt.capitalize(message.type) + ': ' + message.message);
 					});
 					return;
 				}
