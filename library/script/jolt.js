@@ -63,7 +63,7 @@
 
 			Jolt.load(window.location.href, 'get', null, true);
 		},
-		load: function(href, method, data, skipState) {
+		load: function(href, method, data, skipState, joltTarget) {
 			if(!Jolt.enabled)
 				return true;
 
@@ -100,6 +100,12 @@
 			 * Prepare request
 			 */
 			var status = Jolt.status();
+			if(typeof joltTarget !== 'undefined' && typeof status[joltTarget] !== 'undefined') {
+				var nstatus = {};
+				nstatus[joltTarget] = status[joltTarget];
+				status = nstatus;
+			}
+			status['@target'] = joltTarget;
 			if(typeof method === 'string')
 				method = method.toLowerCase();
 
@@ -152,8 +158,9 @@
 			var data = form.serialize();
 			var method = form.attr('method');
 			var action = form.attr('action');
+			var joltTarget = form.attr('jolt-target');
 			if(!action) action = window.location.href.split('?')[0];
-			return Jolt.load(action, method, data);
+			return Jolt.load(action, method, data, false, joltTarget);
 		},
 		frame: function(href) {
 			$('.joltOverflow').children('.wrapper').append(
@@ -208,7 +215,7 @@
 				 * @author Nate Ferrero
 				 */
 				if(data && data.redirect)
-					return Jolt.load(data.redirect);
+					return Jolt.load(data.redirect, 'get', {}, false, data.target);
 
 				/**
 				 * Locate section

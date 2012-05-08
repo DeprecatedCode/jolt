@@ -28,7 +28,7 @@ class Bundle {
 		if(!isset($_POST['@jolt']))
 			return;
 		header('Content-Type: text/json', true);
-		echo e\json_encode_safe(array('redirect' => $url));
+		echo e\json_encode_safe(array('redirect' => $url, 'target' => $_POST['@jolt']['@target']));
 		exit;
 	}
 
