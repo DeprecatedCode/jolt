@@ -307,8 +307,9 @@ class Jolt extends Node {
 	}
 
 	private function moveAttributesUp($from, $to = '') {
+		
 		/**
-		 * Set the attributes to the body tag
+		 * Get the attibutes from the source
 		 */
 		$attrs = $from->attributes;
 
@@ -343,7 +344,7 @@ class Jolt extends Node {
 		}
 
 		/**
-		 * Set the attributes to the body
+		 * Set the attributes to the $to tag
 		 */
 		$this->findParent($to)->attributes = $attributes;
 	}
