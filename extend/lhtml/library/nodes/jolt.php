@@ -243,6 +243,9 @@ class Jolt extends Node {
 					}
 					self::$placeholderContent[$ns][$slug]->element = false;
 					self::$placeholderContent[$ns][$slug]->appendTo($applyNow);
+
+					if($applyNow->fake_element === 'page:content')
+						$this->moveAttributesUp(self::$placeholderContent[$ns][$slug], 'body');
 				}
 				break;
 			}
@@ -280,6 +283,7 @@ class Jolt extends Node {
 				$node->element = false;
 				$node->appendTo($this);
 			}
+
 		}
 
 		/**
@@ -300,6 +304,48 @@ class Jolt extends Node {
 		 * All done!
 		 */
 		return;
+	}
+
+	private function moveAttributesUp($from, $to = '') {
+		/**
+		 * Set the attributes to the body tag
+		 */
+		$attrs = $from->attributes;
+
+		/**
+		 * Load any higher level attributes if there are any on the tag
+		 */
+		try {
+			$attrs1 = $from->findParent($from->fake_element)->attributes;
+		}
+		
+		catch(Exception $e) {
+			$attrs1 = array();
+		}
+
+		if(!is_array($attrs1))
+			$attrs1 = array();
+
+		/**
+		 * Merge the arrays manually
+		 */
+		$attributes = array();
+		foreach($attrs as $a => $b) {
+			if(isset($attrs1[$a]))
+				$attributes[$a] = $b . ' ' . $attrs1[$a];
+			else $attributes[$a] = $b;
+		}
+
+		foreach($attrs1 as $a => $b) {
+			if(isset($attributes[$a]))
+				continue;
+			else $attributes[$a] = $b;
+		}
+
+		/**
+		 * Set the attributes to the body
+		 */
+		$this->findParent($to)->attributes = $attributes;
 	}
 
 	/**
